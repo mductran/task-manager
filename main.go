@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -9,7 +10,7 @@ import (
 	"os/exec"
 	"runtime"
 	"sort"
-	"strings"
+	"strconv"
 )
 
 const (
@@ -80,26 +81,68 @@ func SortProcesses(processes []Process, parents []Process, field int) {
 	}
 }
 
-func parseWindowsProcesses() ([]Process, error) {
+func parseWindowsProcesses(processTable string) ([]Process, error) {
 	return nil, nil
 }
 
-func ListProcessesUnix() ([]Process, error) {
+func parseUnixProcesses() ([]Process, error) {
 	return nil, nil
+}
+
+func ListProcessesUnix() ([]int64, error) {
+
+	dir, err := os.Open("/proc")
+	if err != nil {
+		return []int64{}, err
+	}
+	defer dir.Close()
+
+	results := make([]int64, 0, 50)
+
+	for {
+		names, err := dir.Readdirnames(10)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return nil, err
+		}
+
+		for _, name := range names {
+			if name[0] < '0' || name[0] > '9' {
+				continue
+			}
+			pid, err := strconv.ParseInt(name, 10, 0)
+			if err != nil {
+				continue
+			}
+			results = append(results, pid)
+		}
+	}
+
+	return results, nil
 }
 
 func ListProcessesWindows() ([]Process, error) {
-	cmd := exec.Command("tasklist.exe", "/fo", "list", "/nh")
-	var out strings.Builder
-	cmd.Stdout = &out
+	cmd := exec.Command("tasklist")
 
+	var outBuffer, errBuffer bytes.Buffer
 	if err := cmd.Run(); err != nil {
 		return []Process{}, err
 	}
+	out := string(outBuffer.String())
 
-	parseWindowsProcesses()
+	if errBuffer.Len() != 0 {
+		err := errBuffer.String()
+		return []Process{}, errors.New(err)
+	}
 
-	return []Process{}, nil
+	processes, err := parseWindowsProcesses(out)
+	if err != nil {
+		return []Process{}, err
+	}
+
+	return processes, nil
 }
 
 func SearchProcessById() (Process, error) {
