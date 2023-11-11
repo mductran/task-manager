@@ -1,8 +1,7 @@
-package main
+package taskmanager
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -10,28 +9,7 @@ import (
 	"os/exec"
 	"runtime"
 	"sort"
-	"strconv"
 )
-
-const (
-	CPU     = 1
-	RAM     = 2
-	DISK    = 3
-	NETWORK = 4
-	GPU     = 5
-)
-
-type Process struct {
-	name          string
-	pid           uint32
-	parent_pid    uint32
-	children      []Process
-	cpu_usage     float32
-	ram_usage     float32
-	disk_usage    float32
-	network_usage float32
-	gpu_usage     float32
-}
 
 type SystemInfo struct {
 	cpu_hist        float32
@@ -74,75 +52,11 @@ func SortProcesses(processes []Process, parents []Process, field int) {
 			return processes[i].network_usage < processes[j].network_usage
 		})
 	}
-	if field == GPU {
-		sort.SliceStable(processes, func(i, j int) bool {
-			return processes[i].gpu_usage < processes[j].gpu_usage
-		})
-	}
-}
-
-func parseWindowsProcesses(processTable string) ([]Process, error) {
-	return nil, nil
-}
-
-func parseUnixProcesses() ([]Process, error) {
-	return nil, nil
-}
-
-func ListProcessesUnix() ([]int64, error) {
-
-	dir, err := os.Open("/proc")
-	if err != nil {
-		return []int64{}, err
-	}
-	defer dir.Close()
-
-	results := make([]int64, 0, 50)
-
-	for {
-		names, err := dir.Readdirnames(10)
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return nil, err
-		}
-
-		for _, name := range names {
-			if name[0] < '0' || name[0] > '9' {
-				continue
-			}
-			pid, err := strconv.ParseInt(name, 10, 0)
-			if err != nil {
-				continue
-			}
-			results = append(results, pid)
-		}
-	}
-
-	return results, nil
-}
-
-func ListProcessesWindows() ([]Process, error) {
-	cmd := exec.Command("tasklist")
-
-	var outBuffer, errBuffer bytes.Buffer
-	if err := cmd.Run(); err != nil {
-		return []Process{}, err
-	}
-	out := string(outBuffer.String())
-
-	if errBuffer.Len() != 0 {
-		err := errBuffer.String()
-		return []Process{}, errors.New(err)
-	}
-
-	processes, err := parseWindowsProcesses(out)
-	if err != nil {
-		return []Process{}, err
-	}
-
-	return processes, nil
+	// if field == GPU {
+	// 	sort.SliceStable(processes, func(i, j int) bool {
+	// 		return processes[i].gpu_usage < processes[j].gpu_usage
+	// 	})
+	// }
 }
 
 func SearchProcessById() (Process, error) {
@@ -151,11 +65,6 @@ func SearchProcessById() (Process, error) {
 
 func SearchProcessByName() (Process, error) {
 	return Process{}, nil
-}
-
-// Create a map of PIDs and Processes and update
-func UpdateProcesses(pidTable map[uint32]Process, processes []Process) {
-
 }
 
 func getRuntime() string {
