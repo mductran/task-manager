@@ -14,7 +14,7 @@ type Process struct {
 	parent_pid    uint32
 	children      []Process
 	cpu_usage     float32
-	ram_usage     float32
+	ram_usage     uint32
 	disk_usage    float32
 	network_usage float32
 	// gpu_usage     float32
