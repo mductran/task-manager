@@ -20,10 +20,41 @@ type Process struct {
 	// gpu_usage     float32
 }
 
-type ProcessInterface interface {
-	Parse() Process
+type SystemInfo struct {
+	cpu_name       string
+	cpu_freq       uint16
+	cpu_temp       int8
+	cpu_core_count uint8
+	process_count  uint32
+	uptime         float64
+	mem_total      uint32
+}
 
-	List() ([]Process, error)
+func List() ([]Process, error) {
+	list()
+	return nil, nil
+}
 
-	Update()
+func Search() ([]Process, error) {
+	return nil, nil
+}
+
+func Sort() ([]Process, error) {
+	return nil, nil
+}
+
+func Start() (bool, error) {
+	return false, nil
+}
+
+func Stop() (bool, error) {
+	return false, nil
+}
+
+func Pause() (bool, error) {
+	return false, nil
+}
+
+func Resume() (bool, error) {
+	return false, nil
 }

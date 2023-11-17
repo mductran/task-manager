@@ -1,3 +1,5 @@
+//go:build unix
+
 package taskmanager
 
 import (
@@ -6,15 +8,11 @@ import (
 	"strconv"
 )
 
-type ProcessUnix struct {
-	Process
-}
-
-func parseProcessesUnix(pid int) (Process, error) {
+func parse(pid int) (Process, error) {
 	return Process{}, nil
 }
 
-func (p *ProcessUnix) List() ([]Process, error) {
+func list() ([]Process, error) {
 
 	dir, err := os.Open("/proc")
 	if err != nil {

@@ -1,3 +1,5 @@
+//go:build windows
+
 package taskmanager
 
 import (
@@ -10,41 +12,31 @@ import (
 	"strings"
 )
 
-type ProcessWindows struct {
-	Process
-	session_name string
-	session_num  uint32
-}
-
 func clearString(str string) string {
 	return regexp.MustCompile(`[^\p{L}\p{N} ]+`).ReplaceAllString(str, "")
 }
 
-func process(line string) (ProcessWindows, error) {
+func getProcess(line string) (Process, error) {
 	line = clearString(line)
 	elements := strings.SplitAfter(line, ",")
 
 	pid, _ := strconv.ParseUint(elements[1], 10, 16)
 	ram, _ := strconv.ParseUint(elements[4], 10, 16)
-	sess, _ := strconv.ParseUint(elements[3], 10, 16)
-	pw := ProcessWindows{
-		Process: Process{
-			name:      elements[0],
-			pid:       uint32(pid),
-			ram_usage: uint32(ram),
-		},
-		session_name: elements[2],
-		session_num:  uint32(sess),
+	// sess, _ := strconv.ParseUint(elements[3], 10, 16)
+	pw := Process{
+		name:      elements[0],
+		pid:       uint32(pid),
+		ram_usage: uint32(ram),
 	}
 	return pw, nil
 }
 
-func parseProcessesWindows(processes string) ([]ProcessWindows, error) {
+func parse(processes string) ([]Process, error) {
 	scanner := bufio.NewScanner(strings.NewReader(processes))
 	i := 1
-	var out []ProcessWindows
+	var out []Process
 	for scanner.Scan() {
-		newProcess, err := process(scanner.Text())
+		newProcess, err := getProcess(scanner.Text())
 		if err == nil {
 			out = append(out, newProcess)
 		}
@@ -53,23 +45,23 @@ func parseProcessesWindows(processes string) ([]ProcessWindows, error) {
 	return out, nil
 }
 
-func (p *ProcessWindows) List() ([]ProcessWindows, error) {
+func list() ([]Process, error) {
 	cmd := exec.Command("tasklist")
 
 	var outBuffer, errBuffer bytes.Buffer
 	if err := cmd.Run(); err != nil {
-		return []ProcessWindows{}, err
+		return []Process{}, err
 	}
 	out := string(outBuffer.String())
 
 	if errBuffer.Len() != 0 {
 		err := errBuffer.String()
-		return []ProcessWindows{}, errors.New(err)
+		return []Process{}, errors.New(err)
 	}
 
-	processes, err := parseProcessesWindows(out)
+	processes, err := parse(out)
 	if err != nil {
-		return []ProcessWindows{}, err
+		return []Process{}, err
 	}
 
 	return processes, nil
