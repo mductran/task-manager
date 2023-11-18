@@ -85,14 +85,14 @@ func Start(path string) (uint32, error) {
 	return start(path)
 }
 
-func Stop() (bool, error) {
-	return false, nil
+func Stop(targetPid uint32) (bool, error) {
+	return stop(targetPid)
 }
 
-func Pause() (bool, error) {
-	return false, nil
+func Suspend(pid uint32) (bool, error) {
+	return suspend(pid)
 }
 
-func Resume() (bool, error) {
-	return false, nil
+func Resume(pid uint32) (bool, error) {
+	return resume(pid)
 }
