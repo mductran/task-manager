@@ -2,6 +2,8 @@ package taskmanager
 
 import (
 	"errors"
+	"os"
+	"path"
 	"path/filepath"
 	"sort"
 )
@@ -80,9 +82,13 @@ func Sort(processes []Process, target interface{}) error {
 	}
 }
 
-func Start(path string) (uint32, error) {
-	path = filepath.Clean(path)
-	return start(path)
+func Start(executablePath string) (uint32, error) {
+	executablePath = filepath.Clean(executablePath)
+	currentDir, err := os.Getwd()
+	if err != nil {
+		return 0, err
+	}
+	return start(path.Join(currentDir, executablePath))
 }
 
 func Stop(targetPid uint32) (bool, error) {

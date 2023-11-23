@@ -93,7 +93,8 @@ func searchByPid(processes *[]Process, target uint32) ([]Process, error) {
 }
 
 func start(path string) (uint32, error) {
-	cmd := exec.Command("powershell", "-Command", "Start-Process", path)
+	// cmd := exec.Command("powershell", "-Command", "Start-Process", path)
+	cmd := exec.Command(path)
 	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 	if err := cmd.Start(); err != nil {
 		return 0, err
