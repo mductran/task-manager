@@ -6,7 +6,6 @@ import (
 	"bytes"
 	"fmt"
 	"os/exec"
-	"syscall"
 	"testing"
 )
 
@@ -23,13 +22,12 @@ func TestStartStopProcess(t *testing.T) {
 		t.Errorf("could not start example process")
 	}
 
-	cmd := exec.Command("powershell", "-Command", fmt.Sprintf("Get-Process -Id %d", pid))
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	getProcess := exec.Command("powershell", "-Command", fmt.Sprintf("Get-Process -Id %d", pid))
 
 	var outb, errb bytes.Buffer
-	cmd.Stdout = &outb
-	cmd.Stderr = &errb
-	if err = cmd.Run(); err != nil {
+	getProcess.Stdout = &outb
+	getProcess.Stderr = &errb
+	if err = getProcess.Run(); err != nil {
 		t.Error("Fail to run Get-Process: ", err)
 	}
 	if len(errb.String()) > 0 {
@@ -38,20 +36,52 @@ func TestStartStopProcess(t *testing.T) {
 	if len(outb.String()) < 1 {
 		t.Errorf("Cannot find process with PID: %v", pid)
 	}
-	fmt.Println(outb.String())
 
 	// Suspend
+	_, err = Suspend(pid)
+	if err != nil {
+		t.Errorf("While suspending process with pid %v: ", err)
+	}
+	processStatus := exec.Command("powershell", "-Command", fmt.Sprintf("Get-Process -Id %d | select -expand Responding", pid))
+	outb.Reset()
+	errb.Reset()
+	processStatus.Stdout = &outb
+	processStatus.Stderr = &outb
+	if err = processStatus.Run(); err != nil {
+		t.Error("Fail to run Get-Process status: ", err)
+	}
+	if len(errb.String()) > 0 {
+		t.Error("Fail to run Get-Process status: ", errb.String())
+	}
+	if outb.String() == "True" {
+		t.Errorf("Process is not suspended")
+	}
 
 	// Resume
+	_, err = Resume(pid)
+	if err != nil {
+		t.Errorf("While resuming process with pid: %v", err)
+	}
+	outb.Reset()
+	errb.Reset()
+	if err = processStatus.Run(); err != nil {
+		t.Error("Fail to run Get-Process status: ", err)
+	}
+	if len(errb.String()) > 0 {
+		t.Error("Fail to run Get-Process status: ", errb.String())
+	}
+	if outb.String() != "True" {
+		t.Errorf("Process is not resumed")
+	}
 
 	// Stop
-	killed, err := Stop(pid)
+	_, err = Stop(pid)
+	outb.Reset()
+	errb.Reset()
 	if err != nil {
 		t.Errorf("While terminating process with pid %v: ", err)
 	}
-	if err = cmd.Run(); err == nil {
+	if err = getProcess.Run(); err == nil {
 		t.Error("Process was not killed: ", err)
 	}
-
-	fmt.Println("Process is stopped: ", killed)
 }

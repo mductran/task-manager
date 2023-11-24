@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"bytes"
 	"errors"
+	"fmt"
 	"os/exec"
 	"regexp"
 	"strconv"
@@ -149,6 +150,7 @@ func resume(pid uint32) (bool, error) {
 	// resume the process
 	r2, _, err2 := resumeThread.Call(uintptr(handle))
 	if r2 == 0xFFFFFFFF {
+		fmt.Println("handle: ", handle)
 		return false, err2
 	}
 
