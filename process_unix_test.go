@@ -1,4 +1,4 @@
-//go:build windows
+//go:build unix
 
 package taskmanager
 
@@ -12,7 +12,7 @@ import (
 func TestProcess(t *testing.T) {
 
 	// Start
-	pid, err := Start("./example.exe")
+	pid, err := Start("./example")
 	if err != nil {
 		t.Error(err)
 	}
@@ -20,7 +20,7 @@ func TestProcess(t *testing.T) {
 		t.Errorf("could not start example process")
 	}
 
-	getProcess := exec.Command("powershell", "-Command", fmt.Sprintf("Get-Process -Id %d", pid))
+	getProcess := exec.Command("bash", fmt.Sprintf("ps | grep %d", pid))
 
 	var outb, errb bytes.Buffer
 	getProcess.Stdout = &outb
@@ -40,7 +40,7 @@ func TestProcess(t *testing.T) {
 	if err != nil {
 		t.Errorf("While suspending process with pid %v: ", err)
 	}
-	processStatus := exec.Command("powershell", "-Command", fmt.Sprintf("Get-Process -Id %d | select -expand Responding", pid))
+	processStatus := exec.Command("bash", , fmt.Sprintf("ps -o s= -p %d", pid))
 	outb.Reset()
 	errb.Reset()
 	processStatus.Stdout = &outb
@@ -51,7 +51,7 @@ func TestProcess(t *testing.T) {
 	if len(errb.String()) > 0 {
 		t.Error("Fail to run Get-Process status: ", errb.String())
 	}
-	if outb.String() == "True" {
+	if outb.String() != "T" {
 		t.Errorf("Process is not suspended")
 	}
 
@@ -68,7 +68,7 @@ func TestProcess(t *testing.T) {
 	if len(errb.String()) > 0 {
 		t.Error("Fail to run Get-Process status: ", errb.String())
 	}
-	if outb.String() != "True" {
+	if outb.String() != "S" {
 		t.Errorf("Process is not resumed")
 	}
 
