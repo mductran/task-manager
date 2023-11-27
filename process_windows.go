@@ -4,8 +4,6 @@ package taskmanager
 
 import (
 	"bufio"
-	"bytes"
-	"errors"
 	"fmt"
 	"os/exec"
 	"regexp"
@@ -50,20 +48,14 @@ func parse(processes string) ([]Process, error) {
 }
 
 func list() ([]Process, error) {
-	cmd := exec.Command("tasklist")
+	cmd := exec.Command("tasklist", "/nh")
 
-	var outBuffer, errBuffer bytes.Buffer
-	if err := cmd.Run(); err != nil {
+	out, err := cmd.Output()
+	if err != nil {
 		return []Process{}, err
 	}
-	out := string(outBuffer.String())
 
-	if errBuffer.Len() != 0 {
-		err := errBuffer.String()
-		return []Process{}, errors.New(err)
-	}
-
-	processes, err := parse(out)
+	processes, err := parse(string(out))
 	if err != nil {
 		return []Process{}, err
 	}
