@@ -3,7 +3,6 @@
 package taskmanager
 
 import (
-	"bufio"
 	"fmt"
 	"os/exec"
 	"regexp"
@@ -18,13 +17,38 @@ func clearString(str string) string {
 	return regexp.MustCompile(`[^\p{L}\p{N} ]+`).ReplaceAllString(str, "")
 }
 
-func getProcess(line string) (Process, error) {
-	line = clearString(line)
-	elements := strings.SplitAfter(line, ",")
+func splitAtCommas(s string) []string {
+	res := []string{}
+	var beg int
+	var inString bool
 
-	pid, _ := strconv.ParseUint(elements[1], 10, 16)
-	ram, _ := strconv.ParseUint(elements[4], 10, 16)
-	// sess, _ := strconv.ParseUint(elements[3], 10, 16)
+	for i := 0; i < len(s); i++ {
+		if s[i] == ',' && !inString {
+			res = append(res, s[beg:i])
+			beg = i + 1
+		} else if s[i] == '"' {
+			if !inString {
+				inString = true
+			} else if i > 0 && s[i-1] != '\\' {
+				inString = false
+			}
+		}
+	}
+	return append(res, s[beg:])
+}
+
+func getProcess(line string) (Process, error) {
+	elements := splitAtCommas(line)
+
+	pidString := clearString(elements[1])
+	ramString := clearString(elements[4])
+	ramString = ramString[:len(ramString)-2]
+
+	fmt.Println(ramString)
+
+	pid, _ := strconv.ParseUint(pidString, 10, 16)
+	ram, _ := strconv.ParseUint(ramString, 10, 16)
+
 	pw := Process{
 		name:      elements[0],
 		pid:       uint32(pid),
@@ -34,25 +58,27 @@ func getProcess(line string) (Process, error) {
 }
 
 func parse(processes string) ([]Process, error) {
-	scanner := bufio.NewScanner(strings.NewReader(processes))
-	i := 1
+	pSlice := strings.Split(processes, "\n")
+
 	var out []Process
-	for scanner.Scan() {
-		newProcess, err := getProcess(scanner.Text())
-		if err == nil {
-			out = append(out, newProcess)
+	for _, p := range pSlice {
+		if len(p) > 0 {
+			process, err := getProcess(p)
+			if err == nil {
+				out = append(out, process)
+			}
 		}
-		i += 1
 	}
+
 	return out, nil
 }
 
 func list() ([]Process, error) {
-	cmd := exec.Command("tasklist", "/nh")
+	cmd := exec.Command("tasklist", "/fo", "csv", "/nh")
 
 	out, err := cmd.Output()
 	if err != nil {
-		return []Process{}, err
+		return []Process{}, nil
 	}
 
 	processes, err := parse(string(out))
