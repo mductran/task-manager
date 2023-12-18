@@ -1,4 +1,4 @@
-module github.com/mductran/task-manager
+module github.com/mductran/taskman
 
 go 1.21.4
 
