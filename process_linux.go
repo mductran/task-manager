@@ -48,7 +48,7 @@ func list() ([]Process, error) {
 	var processes []Process
 
 	for result := range results {
-		process, err := parseProcessesUnix(result)
+		process, err := parse(result)
 		if err != nil {
 			continue
 		}
@@ -82,17 +82,17 @@ func searchByPid(processes *[]Process, target uint32) ([]Process, error) {
 
 func start(path string) (uint32, error) {
 	cmd := exec.Command(path)
-	cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
+	// cmd.SysProcAttr = &syscall.SysProcAttr{HideWindow: true}
 
 	if err := cmd.Start(); err != nil {
 		return 0, err
 	}
-	return uint32(cmd.Process.Pid, nil)
+	return uint32(cmd.Process.Pid), nil
 }
 
 func stop(pid uint32) (bool, error) {
 	// TODO: sigkill v. sigterm
-	process, err := os.FindProcess(pid)
+	process, err := os.FindProcess(int(pid))
 	if err != nil {
 		return false, err
 	}
@@ -105,8 +105,7 @@ func stop(pid uint32) (bool, error) {
 }
 
 func suspend(pid uint32) (bool, error) {
-	process, _ := os.FindProcess(pid)
-	process, err := os.FindProcess(pid)
+	process, err := os.FindProcess(int(pid))
 	if err != nil {
 		return false, err
 	}
@@ -119,7 +118,7 @@ func suspend(pid uint32) (bool, error) {
 }
 
 func resume(pid uint32) (bool, error) {
-	process, err := os.FindProcess(pid)
+	process, err := os.FindProcess(int(pid))
 	if err != nil {
 		return false, err
 	}

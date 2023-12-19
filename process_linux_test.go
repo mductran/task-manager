@@ -40,7 +40,7 @@ func TestProcess(t *testing.T) {
 	if err != nil {
 		t.Errorf("While suspending process with pid %v: ", err)
 	}
-	processStatus := exec.Command("bash", , fmt.Sprintf("ps -o s= -p %d", pid))
+	processStatus := exec.Command("bash", fmt.Sprintf("ps -o s= -p %d", pid))
 	outb.Reset()
 	errb.Reset()
 	processStatus.Stdout = &outb
